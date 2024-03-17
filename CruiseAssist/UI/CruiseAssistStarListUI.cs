@@ -25,6 +25,8 @@ namespace tanu.CruiseAssist
 
 		private const string VisitedMark = "● ";
 		private const string NonVisitMark = "";
+		
+		private static string searchString = "";
 
 		public static void OnGUI()
 		{
@@ -127,7 +129,8 @@ namespace tanu.CruiseAssist
 
 			if (ListSelected == 0)
 			{
-				GameMain.galaxy.stars.Select(star => new Tuple<StarData, double>(star, (star.uPosition - GameMain.mainPlayer.uPosition).magnitude)).OrderBy(tuple => tuple.v2).Do(tuple =>
+				GameMain.galaxy.stars.Select(star => new Tuple<StarData, double>(star, (star.uPosition - GameMain.mainPlayer.uPosition).magnitude))
+					.OrderBy(tuple => tuple.v2).Do(tuple =>
 				{
 					var star = tuple.v1;
 					var range = tuple.v2;
@@ -145,6 +148,7 @@ namespace tanu.CruiseAssist
 					{
 						star.planets.
 							Select(planet => new Tuple<PlanetData, double>(planet, (planet.uPosition - GameMain.mainPlayer.uPosition).magnitude)).
+							Where(x=> x.v1.displayName.ToLower().Contains(searchString.ToLower())).
 							AddItem(new Tuple<PlanetData, double>(null, (star.uPosition - GameMain.mainPlayer.uPosition).magnitude)).
 							OrderBy(tuple2 => tuple2.v2).
 							Do(tuple2 =>
@@ -442,7 +446,7 @@ namespace tanu.CruiseAssist
 				actionSelected[ListSelected] %= listButtonModeName[ListSelected].Length;
 			}
 
-			GUILayout.FlexibleSpace();
+			searchString = GUILayout.TextField(searchString);
 
 			if (GUILayout.Button("Close", buttonStyle))
 			{
