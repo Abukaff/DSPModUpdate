@@ -3,98 +3,143 @@ using UnityEngine;
 
 namespace tanu.CruiseAssist
 {
-	public class CruiseAssistDebugUI
-	{
-		public static bool Show = false;
-		public static Rect Rect = new Rect(0f, 0f, 400f, 400f);
+    public class CruiseAssistDebugUI
+    {
+        public static bool Show = false;
+        public static Rect Rect = new Rect(0f, 0f, 400f, 400f);
 
-		private static float lastCheckWindowLeft = float.MinValue;
-		private static float lastCheckWindowTop = float.MinValue;
-		private static long nextCheckGameTick = long.MaxValue;
+        private static float lastCheckWindowLeft = float.MinValue;
+        private static float lastCheckWindowTop = float.MinValue;
+        private static long nextCheckGameTick = long.MaxValue;
 
-		private static Vector2 scrollPos = Vector2.zero;
+        private static Vector2 scrollPos = Vector2.zero;
+        public static int ListSelected = 0;
 
-		public static void OnGUI()
-		{
-			var windowStyle = new GUIStyle(GUI.skin.window);
-			windowStyle.fontSize = 11;
+        public static void OnGUI()
+        {
+            var windowStyle = new GUIStyle(GUI.skin.window);
+            windowStyle.fontSize = 11;
 
-			Rect = GUILayout.Window(99030294, Rect, WindowFunction, "CruiseAssist - Debug", windowStyle);
+            Rect = GUILayout.Window(99030294, Rect, WindowFunction, "CruiseAssist - Debug", windowStyle);
 
-			var scale = CruiseAssistMainUI.Scale / 100.0f;
+            var scale = CruiseAssistMainUI.Scale / 100.0f;
 
-			if (Screen.width < Rect.xMax)
-			{
-				Rect.x = Screen.width - Rect.width;
-			}
-			if (Rect.x < 0)
-			{
-				Rect.x = 0;
-			}
+            if (Screen.width < Rect.xMax)
+            {
+                Rect.x = Screen.width - Rect.width;
+            }
 
-			if (Screen.height < Rect.yMax)
-			{
-				Rect.y = Screen.height - Rect.height;
-			}
-			if (Rect.y < 0)
-			{
-				Rect.y = 0;
-			}
+            if (Rect.x < 0)
+            {
+                Rect.x = 0;
+            }
 
-			if (lastCheckWindowLeft != float.MinValue)
-			{
-				if (Rect.x != lastCheckWindowLeft || Rect.y != lastCheckWindowTop)
-				{
-					nextCheckGameTick = GameMain.gameTick + 300;
-				}
-			}
+            if (Screen.height < Rect.yMax)
+            {
+                Rect.y = Screen.height - Rect.height;
+            }
 
-			lastCheckWindowLeft = Rect.x;
-			lastCheckWindowTop = Rect.y;
+            if (Rect.y < 0)
+            {
+                Rect.y = 0;
+            }
 
-			if (nextCheckGameTick <= GameMain.gameTick)
-			{
-				ConfigManager.CheckConfig(ConfigManager.Step.STATE);
-				nextCheckGameTick = long.MaxValue;
-			}
-		}
+            if (lastCheckWindowLeft != float.MinValue)
+            {
+                if (Rect.x != lastCheckWindowLeft || Rect.y != lastCheckWindowTop)
+                {
+                    nextCheckGameTick = GameMain.gameTick + 300;
+                }
+            }
 
-		public static void WindowFunction(int windowId)
-		{
-			GUILayout.BeginVertical();
+            lastCheckWindowLeft = Rect.x;
+            lastCheckWindowTop = Rect.y;
 
-			var labelStyle = new GUIStyle(GUI.skin.label);
-			labelStyle.fontSize = 12;
+            if (nextCheckGameTick <= GameMain.gameTick)
+            {
+                ConfigManager.CheckConfig(ConfigManager.Step.STATE);
+                nextCheckGameTick = long.MaxValue;
+            }
+        }
 
-			scrollPos = GUILayout.BeginScrollView(scrollPos);
+        public static void WindowFunction(int windowId)
+        {
+            GUILayout.BeginVertical();
+            GUILayout.BeginHorizontal();
 
-			GUILayout.Label($"CruiseAssist.ReticuleTargetStar.id={CruiseAssist.ReticuleTargetStar?.id}", labelStyle);
-			GUILayout.Label($"CruiseAssist.ReticuleTargetPlanet.id={CruiseAssist.ReticuleTargetPlanet?.id}", labelStyle);
-			GUILayout.Label($"CruiseAssist.SelectTargetStar.id={CruiseAssist.SelectTargetStar?.id}", labelStyle);
-			GUILayout.Label($"CruiseAssist.SelectTargetPlanet.id={CruiseAssist.SelectTargetPlanet?.id}", labelStyle);
-			GUILayout.Label($"GameMain.mainPlayer.navigation.indicatorAstroId={GameMain.mainPlayer.navigation.indicatorAstroId}", labelStyle);
-			GUILayout.Label($"GameMain.mainPlayer.controller.input0.w={GameMain.mainPlayer.controller.input0.w}", labelStyle);
-			GUILayout.Label($"GameMain.mainPlayer.controller.input0.x={GameMain.mainPlayer.controller.input0.x}", labelStyle);
-			GUILayout.Label($"GameMain.mainPlayer.controller.input0.y={GameMain.mainPlayer.controller.input0.y}", labelStyle);
-			GUILayout.Label($"GameMain.mainPlayer.controller.input0.z={GameMain.mainPlayer.controller.input0.z}", labelStyle);
-			GUILayout.Label($"GameMain.mainPlayer.controller.input1.w={GameMain.mainPlayer.controller.input1.w}", labelStyle);
-			GUILayout.Label($"GameMain.mainPlayer.controller.input1.x={GameMain.mainPlayer.controller.input1.x}", labelStyle);
-			GUILayout.Label($"GameMain.mainPlayer.controller.input1.y={GameMain.mainPlayer.controller.input1.y}", labelStyle);
-			GUILayout.Label($"GameMain.mainPlayer.controller.input1.z={GameMain.mainPlayer.controller.input1.z}", labelStyle);
-			GUILayout.Label($"VFInput._sailSpeedUp={VFInput._sailSpeedUp}", labelStyle);
-			GUILayout.Label($"CruiseAssist.Enable={CruiseAssist.Enable}", labelStyle);
-			GUILayout.Label($"CruiseAssist.History={CruiseAssist.History.Count()}", labelStyle);
-			GUILayout.Label($"CruiseAssist.History={ListUtils.ToString(CruiseAssist.History)}", labelStyle);
-			GUILayout.Label($"GUI.skin.window.margin.top={GUI.skin.window.margin.top}", labelStyle);
-			GUILayout.Label($"GUI.skin.window.border.top={GUI.skin.window.border.top}", labelStyle);
-			GUILayout.Label($"GUI.skin.window.padding.top={GUI.skin.window.padding.top}", labelStyle);
-			GUILayout.Label($"GUI.skin.window.overflow.top={GUI.skin.window.overflow.top}", labelStyle);
+            string[] texts = { "Debug", "Logs" };
+            var mainWindowStyleButtonStyle = new GUIStyle(GUI.skin.button);
+            mainWindowStyleButtonStyle.fixedWidth = 80;
+            mainWindowStyleButtonStyle.fixedHeight = 20;
+            mainWindowStyleButtonStyle.fontSize = 12;
+            GUI.changed = false;
 
-			GUILayout.EndScrollView();
+            var selected = GUILayout.Toolbar(ListSelected, texts, mainWindowStyleButtonStyle);
+            if (GUI.changed)
+            {
+                VFAudio.Create("ui-click-0", null, Vector3.zero, true, 0);
+            }
 
-			GUILayout.EndVertical();
+            ListSelected = selected != ListSelected ? selected : ListSelected;
+            GUILayout.EndHorizontal();
+            if (ListSelected == 0)
+            {
+                var labelStyle = new GUIStyle(GUI.skin.label);
+                labelStyle.fontSize = 12;
 
-			GUI.DragWindow();
-		}
-	}
+                scrollPos = GUILayout.BeginScrollView(scrollPos);
+
+                GUILayout.Label($"CruiseAssist.ReticuleTargetStar.id={CruiseAssist.ReticuleTargetStar?.id}",
+                    labelStyle);
+                GUILayout.Label($"CruiseAssist.ReticuleTargetPlanet.id={CruiseAssist.ReticuleTargetPlanet?.id}",
+                    labelStyle);
+                GUILayout.Label($"CruiseAssist.SelectTargetStar.id={CruiseAssist.SelectTargetStar?.id}", labelStyle);
+                GUILayout.Label($"CruiseAssist.SelectTargetPlanet.id={CruiseAssist.SelectTargetPlanet?.id}",
+                    labelStyle);
+                GUILayout.Label(
+                    $"GameMain.mainPlayer.navigation.indicatorAstroId={GameMain.mainPlayer.navigation.indicatorAstroId}",
+                    labelStyle);
+                GUILayout.Label($"GameMain.mainPlayer.controller.input0.w={GameMain.mainPlayer.controller.input0.w}",
+                    labelStyle);
+                GUILayout.Label($"GameMain.mainPlayer.controller.input0.x={GameMain.mainPlayer.controller.input0.x}",
+                    labelStyle);
+                GUILayout.Label($"GameMain.mainPlayer.controller.input0.y={GameMain.mainPlayer.controller.input0.y}",
+                    labelStyle);
+                GUILayout.Label($"GameMain.mainPlayer.controller.input0.z={GameMain.mainPlayer.controller.input0.z}",
+                    labelStyle);
+                GUILayout.Label($"GameMain.mainPlayer.controller.input1.w={GameMain.mainPlayer.controller.input1.w}",
+                    labelStyle);
+                GUILayout.Label($"GameMain.mainPlayer.controller.input1.x={GameMain.mainPlayer.controller.input1.x}",
+                    labelStyle);
+                GUILayout.Label($"GameMain.mainPlayer.controller.input1.y={GameMain.mainPlayer.controller.input1.y}",
+                    labelStyle);
+                GUILayout.Label($"GameMain.mainPlayer.controller.input1.z={GameMain.mainPlayer.controller.input1.z}",
+                    labelStyle);
+                GUILayout.Label($"VFInput._sailSpeedUp={VFInput._sailSpeedUp}", labelStyle);
+                GUILayout.Label($"CruiseAssist.Enable={CruiseAssist.Enable}", labelStyle);
+                GUILayout.Label($"CruiseAssist.History={CruiseAssist.History.Count()}", labelStyle);
+                GUILayout.Label($"CruiseAssist.History={ListUtils.ToString(CruiseAssist.History)}", labelStyle);
+                GUILayout.Label($"GUI.skin.window.margin.top={GUI.skin.window.margin.top}", labelStyle);
+                GUILayout.Label($"GUI.skin.window.border.top={GUI.skin.window.border.top}", labelStyle);
+                GUILayout.Label($"GUI.skin.window.padding.top={GUI.skin.window.padding.top}", labelStyle);
+                GUILayout.Label($"GUI.skin.window.overflow.top={GUI.skin.window.overflow.top}", labelStyle);
+
+                GUILayout.EndScrollView();
+            }
+            else
+            {
+                var textAreaStyle = new GUIStyle(GUI.skin.textArea);
+                textAreaStyle.stretchWidth = true;
+                textAreaStyle.stretchHeight = true;
+                scrollPos = GUILayout.BeginScrollView(scrollPos);
+                GUILayout.TextArea(MyLogger.LogString,textAreaStyle);
+                GUILayout.EndScrollView();
+            }
+
+
+            GUILayout.EndVertical();
+
+            GUI.DragWindow();
+        }
+    }
 }

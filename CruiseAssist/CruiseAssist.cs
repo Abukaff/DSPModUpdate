@@ -12,9 +12,9 @@ namespace tanu.CruiseAssist
 	[BepInPlugin(ModGuid, ModName, ModVersion)]
 	public class CruiseAssist : BaseUnityPlugin
 	{
-		public const string ModGuid = "tanu.CruiseAssist";
+		public const string ModGuid = "abukaff.CruiseAssist";
 		public const string ModName = "CruiseAssist";
-		public const string ModVersion = "0.0.30";
+		public const string ModVersion = "0.0.39";
 
 		public static bool Enable = true;
 		public static bool MarkVisitedFlag = true;
@@ -111,36 +111,44 @@ namespace tanu.CruiseAssist
 			}
 		}
 
+		
 		private void Check()
 		{
-			var astroId = GameMain.mainPlayer.navigation.indicatorAstroId;
-
-			if (CruiseAssist.SelectTargetAstroId != astroId)
+			try
 			{
-				CruiseAssist.SelectTargetAstroId = astroId;
-				if (astroId % 100 != 0)
+				var astroId = GameMain.mainPlayer.navigation.indicatorAstroId;
+				if (CruiseAssist.SelectTargetAstroId != astroId)
 				{
-					CruiseAssist.SelectTargetPlanet = GameMain.galaxy.PlanetById(astroId);
-					CruiseAssist.SelectTargetStar = CruiseAssist.SelectTargetPlanet.star;
+					CruiseAssist.SelectTargetAstroId = astroId;
+					if (astroId % 100 != 0)
+					{
+						CruiseAssist.SelectTargetPlanet = GameMain.galaxy.PlanetById(astroId);
+						CruiseAssist.SelectTargetStar = CruiseAssist.SelectTargetPlanet.star;
+					}
+					else
+					{
+						CruiseAssist.SelectTargetPlanet = null;
+						CruiseAssist.SelectTargetStar = GameMain.galaxy.StarById(astroId / 100);
+					}
 				}
-				else
+
+				if (GameMain.localPlanet != null)
 				{
-					CruiseAssist.SelectTargetPlanet = null;
-					CruiseAssist.SelectTargetStar = GameMain.galaxy.StarById(astroId / 100);
+					if (CruiseAssist.History.Count == 0 || CruiseAssist.History.Last() != GameMain.localPlanet.id)
+					{
+						if (CruiseAssist.History.Count >= 128)
+						{
+							CruiseAssist.History.RemoveAt(0);
+						}
+
+						CruiseAssist.History.Add(GameMain.localPlanet.id);
+						ConfigManager.CheckConfig(ConfigManager.Step.STATE);
+					}
 				}
 			}
-
-			if (GameMain.localPlanet != null)
+			catch (Exception error)
 			{
-				if (CruiseAssist.History.Count == 0 || CruiseAssist.History.Last() != GameMain.localPlanet.id)
-				{
-					if (CruiseAssist.History.Count >= 128)
-					{
-						CruiseAssist.History.RemoveAt(0);
-					}
-					CruiseAssist.History.Add(GameMain.localPlanet.id);
-					ConfigManager.CheckConfig(ConfigManager.Step.STATE);
-				}
+				MyLogger.LogToGame(error.Message);
 			}
 		}
 
