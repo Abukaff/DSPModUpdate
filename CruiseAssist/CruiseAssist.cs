@@ -9,167 +9,178 @@ using UnityEngine;
 
 namespace tanu.CruiseAssist
 {
-	[BepInPlugin(ModGuid, ModName, ModVersion)]
-	public class CruiseAssist : BaseUnityPlugin
-	{
-		public const string ModGuid = "abukaff.CruiseAssist";
-		public const string ModName = "CruiseAssist";
-		public const string ModVersion = "0.0.39";
+    [BepInPlugin(ModGuid, ModName, ModVersion)]
+    public class CruiseAssist : BaseUnityPlugin
+    {
+        public const string ModGuid = "abukaff.CruiseAssist";
+        public const string ModName = "CruiseAssist";
+        public const string ModVersion = "0.0.39";
 
-		public static bool Enable = true;
-		public static bool MarkVisitedFlag = true;
-		public static bool SelectFocusFlag = false;
-		public static bool HideDuplicateHistoryFlag = true;
-		public static bool AutoDisableLockCursorFlag = false;
-		public static StarData ReticuleTargetStar = null;
-		public static PlanetData ReticuleTargetPlanet = null;
-		public static StarData SelectTargetStar = null;
-		public static PlanetData SelectTargetPlanet = null;
-		public static int SelectTargetAstroId = 0;
-		public static StarData TargetStar = null;
-		public static PlanetData TargetPlanet = null;
-		public static CruiseAssistState State = CruiseAssistState.INACTIVE;
+        public static bool Enable = true;
+        public static bool MarkVisitedFlag = true;
+        public static bool SelectFocusFlag = false;
+        public static bool HideDuplicateHistoryFlag = true;
+        public static bool AutoDisableLockCursorFlag = false;
+        public static StarData ReticuleTargetStar = null;
+        public static PlanetData ReticuleTargetPlanet = null;
+        public static StarData SelectTargetStar = null;
+        public static PlanetData SelectTargetPlanet = null;
+        public static int SelectTargetAstroId = 0;
+        public static int SelectTargetEnemyId = 0;
 
-		public static List<int> History = new List<int>();
-		public static List<int> Bookmark = new List<int>();
 
-		public static Func<StarData, string> GetStarName = star => star.displayName;
-		public static Func<PlanetData, string> GetPlanetName = planet => planet.displayName;
+        public static StarData TargetStar = null;
+        public static PlanetData TargetPlanet = null;
+        public static EnemyData? TargetEnemy = null;
+        public static CruiseAssistState State = CruiseAssistState.INACTIVE;
 
-		private Harmony harmony;
+        public static List<int> History = new List<int>();
+        public static List<int> Bookmark = new List<int>();
 
-		public void Awake()
-		{
-			LogManager.Logger = base.Logger;
-			new CruiseAssistConfigManager(base.Config);
-			ConfigManager.CheckConfig(ConfigManager.Step.AWAKE);
-			harmony = new Harmony($"{ModGuid}.Patch");
-			harmony.PatchAll(typeof(Patch_GameMain));
-			harmony.PatchAll(typeof(Patch_UISailPanel));
-			harmony.PatchAll(typeof(Patch_UIStarmap));
-			harmony.PatchAll(typeof(Patch_PlayerMoveSail));
-		}
+        public static Func<StarData, string> GetStarName = star => star.displayName;
+        public static Func<PlanetData, string> GetPlanetName = planet => planet.displayName;
 
-		public void OnDestroy()
-		{
-			harmony.UnpatchAll();
-		}
+        private Harmony harmony;
 
-		public void OnGUI()
-		{
-			if (DSPGame.IsMenuDemo || GameMain.mainPlayer == null)
-			{
-				return;
-			}
-			var uiGame = UIRoot.instance.uiGame;
-			if (!uiGame.guideComplete || uiGame.techTree.active || uiGame.escMenu.active || uiGame.globemap.active || uiGame.hideAllUI0 || uiGame.hideAllUI1)
-			{
-				return;
-			}
-			if (GameMain.mainPlayer.sailing || uiGame.starmap.active)
-			{
-				Check();
+        public void Awake()
+        {
+            LogManager.Logger = base.Logger;
+            new CruiseAssistConfigManager(base.Config);
+            ConfigManager.CheckConfig(ConfigManager.Step.AWAKE);
+            harmony = new Harmony($"{ModGuid}.Patch");
+            harmony.PatchAll(typeof(Patch_GameMain));
+            harmony.PatchAll(typeof(Patch_UISailPanel));
+            harmony.PatchAll(typeof(Patch_UIStarmap));
+            harmony.PatchAll(typeof(Patch_PlayerMoveSail));
+        }
 
-				CruiseAssistMainUI.wIdx = uiGame.starmap.active ? 1 : 0;
+        public void OnDestroy()
+        {
+            harmony.UnpatchAll();
+        }
 
-				var scale = CruiseAssistMainUI.Scale / 100.0f;
+        public void OnGUI()
+        {
+            if (DSPGame.IsMenuDemo || GameMain.mainPlayer == null)
+            {
+                return;
+            }
+            var uiGame = UIRoot.instance.uiGame;
+            if (!uiGame.guideComplete || uiGame.techTree.active || uiGame.escMenu.active || uiGame.globemap.active || uiGame.hideAllUI0 || uiGame.hideAllUI1)
+            {
+                return;
+            }
+            if (GameMain.mainPlayer.sailing || uiGame.starmap.active)
+            {
+                Check();
 
-				GUIUtility.ScaleAroundPivot(new Vector2(scale, scale), Vector2.zero);
+                CruiseAssistMainUI.wIdx = uiGame.starmap.active ? 1 : 0;
 
-				CruiseAssistMainUI.OnGUI();
-				if (CruiseAssistStarListUI.Show[CruiseAssistMainUI.wIdx])
-				{
-					CruiseAssistStarListUI.OnGUI();
-				}
-				if (CruiseAssistConfigUI.Show[CruiseAssistMainUI.wIdx])
-				{
-					CruiseAssistConfigUI.OnGUI();
-				}
-				if (CruiseAssistDebugUI.Show)
-				{
-					CruiseAssistDebugUI.OnGUI();
-				}
+                var scale = CruiseAssistMainUI.Scale / 100.0f;
 
-				bool resetInputFlag = false;
+                GUIUtility.ScaleAroundPivot(new Vector2(scale, scale), Vector2.zero);
 
-				resetInputFlag = ResetInput(CruiseAssistMainUI.Rect[CruiseAssistMainUI.wIdx], scale);
+                CruiseAssistMainUI.OnGUI();
+                if (CruiseAssistStarListUI.Show[CruiseAssistMainUI.wIdx])
+                {
+                    CruiseAssistStarListUI.OnGUI();
+                }
+                if (CruiseAssistConfigUI.Show[CruiseAssistMainUI.wIdx])
+                {
+                    CruiseAssistConfigUI.OnGUI();
+                }
+                if (CruiseAssistDebugUI.Show)
+                {
+                    CruiseAssistDebugUI.OnGUI();
+                }
 
-				if (!resetInputFlag && CruiseAssistStarListUI.Show[CruiseAssistMainUI.wIdx])
-				{
-					resetInputFlag = ResetInput(CruiseAssistStarListUI.Rect[CruiseAssistMainUI.wIdx], scale);
-				}
+                bool resetInputFlag = false;
 
-				if (!resetInputFlag && CruiseAssistConfigUI.Show[CruiseAssistMainUI.wIdx])
-				{
-					resetInputFlag = ResetInput(CruiseAssistConfigUI.Rect[CruiseAssistMainUI.wIdx], scale);
-				}
+                resetInputFlag = ResetInput(CruiseAssistMainUI.Rect[CruiseAssistMainUI.wIdx], scale);
 
-				if (!resetInputFlag && CruiseAssistDebugUI.Show)
-				{
-					resetInputFlag = ResetInput(CruiseAssistDebugUI.Rect, scale);
-				}
-			}
-		}
+                if (!resetInputFlag && CruiseAssistStarListUI.Show[CruiseAssistMainUI.wIdx])
+                {
+                    resetInputFlag = ResetInput(CruiseAssistStarListUI.Rect[CruiseAssistMainUI.wIdx], scale);
+                }
 
-		
-		private void Check()
-		{
-			try
-			{
-				var astroId = GameMain.mainPlayer.navigation.indicatorAstroId;
-				if (CruiseAssist.SelectTargetAstroId != astroId)
-				{
-					CruiseAssist.SelectTargetAstroId = astroId;
-					if (astroId % 100 != 0)
-					{
-						CruiseAssist.SelectTargetPlanet = GameMain.galaxy.PlanetById(astroId);
-						CruiseAssist.SelectTargetStar = CruiseAssist.SelectTargetPlanet.star;
-					}
-					else
-					{
-						CruiseAssist.SelectTargetPlanet = null;
-						CruiseAssist.SelectTargetStar = GameMain.galaxy.StarById(astroId / 100);
-					}
-				}
+                if (!resetInputFlag && CruiseAssistConfigUI.Show[CruiseAssistMainUI.wIdx])
+                {
+                    resetInputFlag = ResetInput(CruiseAssistConfigUI.Rect[CruiseAssistMainUI.wIdx], scale);
+                }
 
-				if (GameMain.localPlanet != null)
-				{
-					if (CruiseAssist.History.Count == 0 || CruiseAssist.History.Last() != GameMain.localPlanet.id)
-					{
-						if (CruiseAssist.History.Count >= 128)
-						{
-							CruiseAssist.History.RemoveAt(0);
-						}
+                if (!resetInputFlag && CruiseAssistDebugUI.Show)
+                {
+                    resetInputFlag = ResetInput(CruiseAssistDebugUI.Rect, scale);
+                }
+            }
+        }
 
-						CruiseAssist.History.Add(GameMain.localPlanet.id);
-						ConfigManager.CheckConfig(ConfigManager.Step.STATE);
-					}
-				}
-			}
-			catch (Exception error)
-			{
-				MyLogger.LogToGame(error.Message);
-			}
-		}
 
-		private bool ResetInput(Rect rect, float scale)
-		{
-			var left = rect.xMin * scale;
-			var right = rect.xMax * scale;
-			var top = rect.yMin * scale;
-			var bottom = rect.yMax * scale;
-			var inputX = Input.mousePosition.x;
-			var inputY = Screen.height - Input.mousePosition.y;
-			if (left <= inputX && inputX <= right && top <= inputY && inputY <= bottom)
-			{
-				int[] zot = { 0, 1, 2 };
-				if (zot.Any(Input.GetMouseButton) || Input.mouseScrollDelta.y != 0)
-				{
-					Input.ResetInputAxes();
-					return true;
-				}
-			}
-			return false;
-		}
-	}
+        private void Check()
+        {
+            try
+            {
+                var astroId = GameMain.mainPlayer.navigation.indicatorAstroId;
+                var enemyId = GameMain.mainPlayer.navigation.indicatorEnemyId;
+
+                if (CruiseAssist.SelectTargetAstroId != astroId)
+                {
+                    CruiseAssist.SelectTargetAstroId = astroId;
+                    if (astroId % 100 != 0)
+                    {
+                        CruiseAssist.SelectTargetPlanet = GameMain.galaxy.PlanetById(astroId);
+                        CruiseAssist.SelectTargetStar = CruiseAssist.SelectTargetPlanet.star;
+                    }
+                    else
+                    {
+                        CruiseAssist.SelectTargetPlanet = null;
+                        CruiseAssist.SelectTargetStar = GameMain.galaxy.StarById(astroId / 100);
+                    }
+                }
+
+                if (CruiseAssist.SelectTargetEnemyId != enemyId)
+                {
+                    CruiseAssist.SelectTargetEnemyId = enemyId;
+                }
+
+                if (GameMain.localPlanet != null)
+                {
+                    if (CruiseAssist.History.Count == 0 || CruiseAssist.History.Last() != GameMain.localPlanet.id)
+                    {
+                        if (CruiseAssist.History.Count >= 128)
+                        {
+                            CruiseAssist.History.RemoveAt(0);
+                        }
+
+                        CruiseAssist.History.Add(GameMain.localPlanet.id);
+                        ConfigManager.CheckConfig(ConfigManager.Step.STATE);
+                    }
+                }
+            }
+            catch (Exception error)
+            {
+                MyLogger.LogToGame(error.Message);
+            }
+        }
+
+        private bool ResetInput(Rect rect, float scale)
+        {
+            var left = rect.xMin * scale;
+            var right = rect.xMax * scale;
+            var top = rect.yMin * scale;
+            var bottom = rect.yMax * scale;
+            var inputX = Input.mousePosition.x;
+            var inputY = Screen.height - Input.mousePosition.y;
+            if (left <= inputX && inputX <= right && top <= inputY && inputY <= bottom)
+            {
+                int[] zot = { 0, 1, 2 };
+                if (zot.Any(Input.GetMouseButton) || Input.mouseScrollDelta.y != 0)
+                {
+                    Input.ResetInputAxes();
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
 }

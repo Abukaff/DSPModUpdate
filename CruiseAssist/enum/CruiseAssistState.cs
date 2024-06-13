@@ -4,6 +4,7 @@
 	{
 		TO_STAR,
 		TO_PLANET,
-		INACTIVE
+        TO_ENEMY,
+        INACTIVE
 	};
 }
